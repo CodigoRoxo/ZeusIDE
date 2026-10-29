@@ -1,0 +1,23 @@
+name: ✨ Sugerir recurso
+description: Uma ideia para deixar o Zeus IDE melhor
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema isso resolve?
+      description: Ex. "Sempre preciso buscar um texto em vários arquivos e..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Como você imagina que funcionaria?
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribuição
+      options:
+        - label: Gostaria de implementar isso eu mesmo(a)

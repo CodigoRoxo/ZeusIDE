@@ -1,0 +1,46 @@
+name: 🐛 Reportar bug
+description: Algo não funciona como deveria
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o problema e o que você esperava que acontecesse.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. Abra a pasta...
+        2. Clique em...
+        3. Veja o erro
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versão do Zeus IDE
+      placeholder: ex. 0.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: Tipo de instalação
+      options:
+        - Instalador (Setup)
+        - Portátil
+        - Rodando do código (npm run dev)
+  - type: input
+    id: os
+    attributes:
+      label: Sistema operacional
+      placeholder: ex. Windows 11 23H2
+  - type: textarea
+    id: extra
+    attributes:
+      label: Prints, GIFs ou logs
+      description: Arraste imagens para cá, se tiver.

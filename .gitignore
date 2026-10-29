@@ -1,0 +1,19 @@
+# Dependências
+node_modules/
+
+# Saídas de build
+dist/
+dist-electron/
+release/
+
+# Logs e arquivos do sistema
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Ambiente / editores
+.env
+.env.*
+.vscode/
+.idea/

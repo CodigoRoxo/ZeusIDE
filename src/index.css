@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --zeus-bg: #edf0f4;
+    --zeus-surface: #e3e6ec;
+    --zeus-panel: #f7f9fa;
+    --zeus-border: #d0d5dd;
+    --zeus-hover: #dce1e8;
+    --zeus-active: #ced4dc;
+    --zeus-muted: #5c667a;
+    --zeus-text: #111620;
+    --zeus-dot: rgba(20, 25, 35, 0.085);
+  }
+
+  .dark {
+    --zeus-bg: #161922;
+    --zeus-surface: #12141c;
+    --zeus-panel: #1b1e2a;
+    --zeus-border: #252938;
+    --zeus-hover: #202433;
+    --zeus-active: #282e40;
+    --zeus-muted: #788299;
+    --zeus-text: #f1f3f7;
+    --zeus-dot: rgba(168, 85, 247, 0.18);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Sleek minimalist scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--zeus-bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--zeus-border);
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--zeus-muted);
+  }
+}
+
+/* Canvas dot grid pattern */
+.bg-dot-pattern {
+  background-color: var(--zeus-bg);
+  background-image: radial-gradient(var(--zeus-dot) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+}
