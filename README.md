@@ -32,6 +32,11 @@ Na página de [Releases](https://github.com/CodigoRoxo/ZeusIDE/releases/latest) 
 
 ## Recursos
 
+<p align="center">
+  <img src="docs/screenshot-split.png" alt="Editor dividido com index.html e index.css lado a lado, tema de ícones Material" width="900" />
+  <br /><sub>Editor dividido (<b>Ctrl+\</b>) com o tema de ícones Material</sub>
+</p>
+
 <table>
   <tr>
     <td align="center"><img src="docs/screenshot-quick-open.png" alt="Busca de arquivos com Ctrl+P" /><br /><sub><b>Ctrl+P</b>: busca de arquivos</sub></td>
@@ -55,6 +60,15 @@ Na página de [Releases](https://github.com/CodigoRoxo/ZeusIDE/releases/latest) 
 - **Paleta de comandos**
   - `Ctrl+P` busca qualquer arquivo do projeto por nome (busca fuzzy).
   - `Ctrl+Shift+P` (ou `>` na busca) lista os comandos da IDE.
+- **Editor dividido**
+  - Dois arquivos lado a lado (ex.: `index.html` e `style.css`), cada lado com suas próprias abas.
+  - `Ctrl+\` divide o editor. **Ctrl+clique** no explorador (ou `Ctrl+Enter` no `Ctrl+P`) abre o arquivo do outro lado.
+  - Arraste abas entre os lados, ou para a metade direita do editor para dividir. Também dá para reordenar arrastando.
+  - O mesmo arquivo aberto nos dois lados fica sincronizado. O divisor é redimensionável (duplo clique centraliza).
+  - `Ctrl+1` / `Ctrl+2` alternam entre os lados, e a divisão é lembrada ao reabrir a IDE.
+- **Temas de ícones**
+  - **Zeus** (padrão) ou **[Material](https://github.com/material-extensions/vscode-material-icon-theme)**, o tema popular do VS Code, com ícones específicos para mais de mil tipos de arquivo e pasta.
+  - Troque pelo botão de ícones no topo do explorador ou pela paleta de comandos.
 - **Abas**
   - Indicador de alterações pendentes.
   - Ao fechar uma aba ou a janela com algo não salvo, a IDE pergunta antes ("Salvar tudo e fechar").
@@ -69,6 +83,8 @@ Na página de [Releases](https://github.com/CodigoRoxo/ZeusIDE/releases/latest) 
 | :--- | :--- |
 | `Ctrl + P` | Busca arquivo no projeto |
 | `Ctrl + Shift + P` | Abre a paleta de comandos |
+| `Ctrl + \` | Divide o editor (abre o arquivo ao lado) |
+| `Ctrl + 1` / `Ctrl + 2` | Vai para o editor da esquerda / direita |
 | `Ctrl + S` | Salva o arquivo ativo |
 | `Ctrl + W` | Fecha a aba ativa |
 | `Ctrl + \`` | Abre ou fecha o terminal |
@@ -129,6 +145,8 @@ Contribuições são muito bem-vindas! Leia o [CONTRIBUTING.md](CONTRIBUTING.md)
 ## Licença
 
 Distribuído sob a licença [MIT](LICENSE). Use, modifique e redistribua à vontade.
+
+O tema de ícones Material vem do [Material Icon Theme](https://github.com/material-extensions/vscode-material-icon-theme) (© Material Extensions, licença MIT).
 
 ---
 

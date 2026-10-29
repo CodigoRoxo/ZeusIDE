@@ -16,6 +16,12 @@ export interface OpenFile {
   language: string;
 }
 
+/** One editor column: the paths of its tabs (in order) and which one is shown */
+export interface EditorGroup {
+  tabs: string[];
+  active: string | null;
+}
+
 export interface CursorPosition {
   line: number;
   column: number;

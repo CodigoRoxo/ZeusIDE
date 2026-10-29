@@ -5,6 +5,7 @@ import {
   FolderPlus,
   RotateCw,
   FolderTree,
+  Shapes,
 } from 'lucide-react';
 import { FileNode } from '../../types/ide';
 import { FileItem } from './FileItem';
@@ -17,12 +18,16 @@ interface SidebarProps {
   isLoading: boolean;
   onOpenFolder: () => void;
   onRefresh: () => void;
-  onSelectFile: (node: FileNode) => void;
+  /** `toSide` is true on Ctrl+click: open in the other editor group */
+  onSelectFile: (node: FileNode, toSide?: boolean) => void;
   onToggleFolder: (path: string) => void;
   onCreateFile: (parentPath: string, name: string) => Promise<unknown>;
   onCreateFolder: (parentPath: string, name: string) => Promise<unknown>;
   onDeleteItem: (path: string) => Promise<unknown>;
   onRenameItem: (oldPath: string, newName: string) => Promise<unknown>;
+  /** Label of the current file icon theme, shown in the toggle's tooltip */
+  iconThemeLabel: string;
+  onToggleIconTheme: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -39,6 +44,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCreateFolder,
   onDeleteItem,
   onRenameItem,
+  iconThemeLabel,
+  onToggleIconTheme,
 }) => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(250);
   const isResizingRef = useRef(false);
@@ -137,6 +144,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title="Atualizar Pastas"
             >
               <RotateCw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onToggleIconTheme}
+              className="p-1 hover:text-zeus-text hover:bg-zeus-hover rounded transition-colors text-zeus-muted"
+              title={`Ícones: ${iconThemeLabel} (clique para trocar)`}
+            >
+              <Shapes className="w-3.5 h-3.5" />
             </button>
           </div>
         )}

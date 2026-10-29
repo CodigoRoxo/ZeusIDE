@@ -8,7 +8,8 @@ interface FileItemProps {
   level: number;
   expandedFolders: Set<string>;
   activeFilePath: string | null;
-  onSelectFile: (node: FileNode) => void;
+  /** `toSide` is true on Ctrl+click: open in the other editor group */
+  onSelectFile: (node: FileNode, toSide?: boolean) => void;
   onToggleFolder: (path: string) => void;
   onCreateFile: (parentPath: string, name: string) => Promise<unknown>;
   onCreateFolder: (parentPath: string, name: string) => Promise<unknown>;
@@ -42,7 +43,7 @@ export const FileItem: React.FC<FileItemProps> = ({
     if (node.isDirectory) {
       onToggleFolder(node.path);
     } else {
-      onSelectFile(node);
+      onSelectFile(node, e.ctrlKey || e.metaKey);
     }
   };
 

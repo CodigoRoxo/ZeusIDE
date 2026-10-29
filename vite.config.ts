@@ -1,6 +1,7 @@
 import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
+import { materialIconsPlugin } from './scripts/vite-material-icons';
 
 // Content Security Policy for the packaged app. Only added to production builds,
 // since the dev server needs inline scripts and websockets for hot reload.
@@ -32,7 +33,7 @@ const cspPlugin = (): Plugin => ({
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), cspPlugin()],
+  plugins: [react(), cspPlugin(), materialIconsPlugin()],
   base: './',
   resolve: {
     alias: {

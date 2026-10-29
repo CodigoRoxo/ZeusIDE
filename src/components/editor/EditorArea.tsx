@@ -1,57 +1,111 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import * as monaco from 'monaco-editor';
 import { FolderOpen, Terminal as TerminalIcon, FileText } from 'lucide-react';
-import { OpenFile, CursorPosition } from '../../types/ide';
-import { TabBar } from './TabBar';
+import { OpenFile, CursorPosition, EditorGroup } from '../../types/ide';
+import { TabBar, DraggedTab, readDraggedTab, TAB_DRAG_TYPE } from './TabBar';
 import { CodeEditor } from './CodeEditor';
 import { BRAND_LOGO_BASE64 } from '../../assets/brandLogo';
+import { MAX_GROUPS } from '../../hooks/useTabs';
 
 interface EditorAreaProps {
-  tabs: OpenFile[];
-  activeTab: OpenFile | undefined;
-  activeTabPath: string | null;
+  files: OpenFile[];
+  groups: EditorGroup[];
+  activeGroup: number;
   theme?: 'dark' | 'light';
-  onSelectTab: (path: string) => void;
-  onCloseTab: (path: string) => void;
-  onChangeContent: (content: string) => void;
+  onSelectTab: (groupIndex: number, path: string) => void;
+  onCloseTab: (path: string, groupIndex: number) => void;
+  onFocusGroup: (groupIndex: number) => void;
+  onMoveTab: (path: string, from: number, to: number, beforePath?: string) => void;
+  onSplit: () => void;
+  onCloseGroup: (groupIndex: number) => void;
+  onChangeContent: (path: string, content: string) => void;
   onCursorChange: (pos: CursorPosition) => void;
   onOpenFolder: () => void;
   onToggleTerminal: () => void;
 }
 
+// Limits for the split divider, as a fraction of the editor width
+const MIN_SPLIT = 0.2;
+const MAX_SPLIT = 0.8;
+
 export const EditorArea: React.FC<EditorAreaProps> = ({
-  tabs,
-  activeTab,
-  activeTabPath,
+  files,
+  groups,
+  activeGroup,
   theme = 'dark',
   onSelectTab,
   onCloseTab,
+  onFocusGroup,
+  onMoveTab,
+  onSplit,
+  onCloseGroup,
   onChangeContent,
   onCursorChange,
   onOpenFolder,
   onToggleTerminal,
 }) => {
-  return (
-    <div className="flex-1 flex flex-col h-full bg-zeus-bg overflow-hidden relative bg-dot-pattern">
-      {/* Tabs */}
-      <TabBar
-        tabs={tabs}
-        activeTabPath={activeTabPath}
-        onSelectTab={onSelectTab}
-        onCloseTab={onCloseTab}
-      />
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [splitRatio, setSplitRatio] = useState(0.5);
+  // Which drop zone is highlighted while a tab is dragged over an editor
+  const [dropZone, setDropZone] = useState<{ group: number; side: 'center' | 'right' } | null>(null);
 
-      {/* Editor or Empty State */}
-      <div className="flex-1 relative overflow-hidden bg-dot-pattern">
-        {activeTab ? (
-          <CodeEditor
-            key={activeTab.path}
-            file={activeTab}
-            theme={theme}
-            onChangeContent={onChangeContent}
-            onCursorChange={onCursorChange}
-          />
-        ) : (
-          /* Welcome Screen */
+  // Dispose Monaco models of files that are no longer open in any group
+  const openUris = files.map((f) => monaco.Uri.parse(f.path).toString()).join('\n');
+  useEffect(() => {
+    const open = new Set(openUris ? openUris.split('\n') : []);
+    for (const model of monaco.editor.getModels()) {
+      if (!open.has(model.uri.toString())) model.dispose();
+    }
+  }, [openUris]);
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const ratio = (moveEvent.clientX - rect.left) / rect.width;
+      setSplitRatio(Math.min(Math.max(ratio, MIN_SPLIT), MAX_SPLIT));
+    };
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+    };
+
+    document.body.style.cursor = 'col-resize';
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Dropping a tab on an editor moves it there; on the right half of a single
+  // editor it opens a new group to the side
+  const zoneFor = (e: React.DragEvent): 'center' | 'right' => {
+    if (groups.length >= MAX_GROUPS) return 'center';
+    const rect = e.currentTarget.getBoundingClientRect();
+    return e.clientX > rect.left + rect.width / 2 ? 'right' : 'center';
+  };
+
+  const handleEditorDrop = (e: React.DragEvent, groupIndex: number) => {
+    const tab = readDraggedTab(e);
+    const zone = zoneFor(e);
+    setDropZone(null);
+    if (!tab) return;
+    e.preventDefault();
+    if (zone === 'right') onMoveTab(tab.path, tab.from, groups.length);
+    else onMoveTab(tab.path, tab.from, groupIndex);
+  };
+
+  const handleTabBarDrop = (tab: DraggedTab, groupIndex: number, beforePath?: string) => {
+    setDropZone(null);
+    onMoveTab(tab.path, tab.from, groupIndex, beforePath);
+  };
+
+  if (files.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col h-full bg-zeus-bg overflow-hidden relative bg-dot-pattern">
+        <div className="flex-1 relative overflow-hidden bg-dot-pattern">
           <div className="w-full h-full flex flex-col items-center justify-center select-none p-8 font-sans bg-dot-pattern">
             <div className="max-w-md w-full flex flex-col items-center space-y-6 text-center">
               {/* Brand Logo */}
@@ -123,6 +177,12 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                   </kbd>
                 </div>
                 <div className="flex justify-between items-center text-zeus-text">
+                  <span>Dividir editor</span>
+                  <kbd className="px-2 py-0.5 bg-zeus-surface border border-zeus-border rounded text-[11px] text-zeus-text font-mono">
+                    Ctrl + \
+                  </kbd>
+                </div>
+                <div className="flex justify-between items-center text-zeus-text">
                   <span>Salvar arquivo</span>
                   <kbd className="px-2 py-0.5 bg-zeus-surface border border-zeus-border rounded text-[11px] text-zeus-text font-mono">
                     Ctrl + S
@@ -168,8 +228,92 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
+    );
+  }
+
+  const isSplit = groups.length > 1;
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex-1 flex h-full bg-zeus-bg overflow-hidden"
+      onDragEnd={() => setDropZone(null)}
+    >
+      {groups.map((group, groupIndex) => {
+        const groupTabs = group.tabs
+          .map((path) => files.find((f) => f.path === path))
+          .filter((f): f is OpenFile => Boolean(f));
+        const activeFile = files.find((f) => f.path === group.active);
+        const zone = dropZone?.group === groupIndex ? dropZone.side : null;
+
+        return (
+          <React.Fragment key={groupIndex}>
+            {groupIndex > 0 && (
+              <div
+                onMouseDown={handleResizeStart}
+                onDoubleClick={() => setSplitRatio(0.5)}
+                className="w-1 shrink-0 bg-zeus-border hover:bg-purple-500/60 cursor-col-resize transition-colors"
+                title="Arraste para redimensionar (duplo clique centraliza)"
+              />
+            )}
+
+            <div
+              className="flex flex-col h-full min-w-0 overflow-hidden"
+              style={{ flex: isSplit ? `${groupIndex === 0 ? splitRatio : 1 - splitRatio} 1 0` : '1 1 0' }}
+              onMouseDownCapture={() => onFocusGroup(groupIndex)}
+            >
+              <TabBar
+                tabs={groupTabs}
+                activeTabPath={group.active}
+                groupIndex={groupIndex}
+                groupCount={groups.length}
+                isFocused={groupIndex === activeGroup}
+                onSelectTab={(path) => onSelectTab(groupIndex, path)}
+                onCloseTab={(path) => onCloseTab(path, groupIndex)}
+                onDropTab={(tab, beforePath) => handleTabBarDrop(tab, groupIndex, beforePath)}
+                onSplit={onSplit}
+                onCloseGroup={() => onCloseGroup(groupIndex)}
+              />
+
+              <div
+                className="flex-1 relative overflow-hidden bg-dot-pattern"
+                onDragOver={(e) => {
+                  if (!e.dataTransfer.types.includes(TAB_DRAG_TYPE)) return;
+                  e.preventDefault();
+                  const side = zoneFor(e);
+                  if (zone !== side) setDropZone({ group: groupIndex, side });
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropZone(null);
+                }}
+                onDrop={(e) => handleEditorDrop(e, groupIndex)}
+              >
+                {activeFile && (
+                  <CodeEditor
+                    file={activeFile}
+                    theme={theme}
+                    autoFocus={groupIndex === activeGroup}
+                    onChangeContent={(content) => onChangeContent(activeFile.path, content)}
+                    onCursorChange={onCursorChange}
+                    onFocus={() => onFocusGroup(groupIndex)}
+                  />
+                )}
+
+                {/* Drop preview while dragging a tab */}
+                {zone && (
+                  <div
+                    className={`absolute top-0 bottom-0 z-20 pointer-events-none bg-purple-500/15 border-2 border-purple-500/50 rounded-sm ${
+                      zone === 'right' ? 'right-0 w-1/2' : 'left-0 right-0'
+                    }`}
+                  />
+                )}
+              </div>
+            </div>
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 };

@@ -17,7 +17,8 @@ interface CommandPaletteProps {
   /** Absolute paths of the project files, or null while loading */
   files: string[] | null;
   commands: PaletteCommand[];
-  onOpenFile: (path: string) => void;
+  /** `toSide` is true on Ctrl+Enter / Ctrl+click: open in the other editor group */
+  onOpenFile: (path: string, toSide?: boolean) => void;
   onClose: () => void;
 }
 
@@ -138,7 +139,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   if (!isOpen) return null;
 
-  const runSelected = (index: number) => {
+  const runSelected = (index: number, toSide = false) => {
     if (isCommandMode) {
       const result = commandResults[index];
       if (!result) return;
@@ -148,7 +149,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       const result = fileResults[index];
       if (!result) return;
       onClose();
-      onOpenFile(result.path);
+      onOpenFile(result.path, toSide);
     }
   };
 
@@ -161,7 +162,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       setSelected((s) => (resultCount === 0 ? 0 : (s - 1 + resultCount) % resultCount));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      runSelected(selected);
+      runSelected(selected, e.ctrlKey || e.metaKey);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
@@ -192,7 +193,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isCommandMode ? 'Digite um comando' : 'Buscar arquivo pelo nome (digite > para comandos)'}
+            placeholder={isCommandMode ? 'Digite um comando' : 'Buscar arquivo (Ctrl+Enter abre ao lado, > para comandos)'}
             className="flex-1 bg-transparent outline-none text-xs text-zeus-text placeholder:text-zeus-muted px-2 py-2.5"
             spellCheck={false}
           />
@@ -237,7 +238,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     key={path}
                     data-index={i}
                     onMouseMove={() => setSelected(i)}
-                    onClick={() => runSelected(i)}
+                    onClick={(e) => runSelected(i, e.ctrlKey || e.metaKey)}
                     className={`flex items-center space-x-2 px-3 py-1.5 text-xs cursor-pointer ${
                       i === selected ? 'bg-zeus-active' : ''
                     }`}

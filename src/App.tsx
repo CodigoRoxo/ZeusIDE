@@ -7,15 +7,20 @@ import { StatusBar } from './components/statusbar/StatusBar';
 import { CommandPalette, PaletteCommand } from './components/palette/CommandPalette';
 import { useFileSystem } from './hooks/useFileSystem';
 import { useTabs } from './hooks/useTabs';
-import { CursorPosition } from './types/ide';
+import { CursorPosition, EditorGroup } from './types/ide';
+import { IconThemeContext, IconThemeId, ICON_THEMES, ICON_THEME_KEY, loadIconTheme } from './theme/iconTheme';
 
 const SESSION_KEY = 'zeus_session';
 
 interface SavedSession {
   rootPath: string | null;
   expandedFolders: string[];
-  openTabs: string[];
-  activeTab: string | null;
+  /** Editor columns with their tabs (split editor) */
+  groups?: EditorGroup[];
+  activeGroup?: number;
+  /** Older sessions (before the split editor) only stored one tab list */
+  openTabs?: string[];
+  activeTab?: string | null;
 }
 
 const fileNameOf = (p: string) => p.replace(/\\/g, '/').split('/').pop() || p;
@@ -37,12 +42,18 @@ export const App: React.FC = () => {
   } = useFileSystem();
 
   const {
-    tabs,
+    files,
+    groups,
+    activeGroup,
     activeTab,
     activeTabPath,
-    setActiveTabPath,
+    selectTab,
+    focusGroup,
     openFile,
     closeTab,
+    moveTab,
+    splitEditor,
+    closeGroup,
     updateContent,
     handlePathRenamed,
     handlePathDeleted,
@@ -66,6 +77,21 @@ export const App: React.FC = () => {
     return (localStorage.getItem('zeus_theme') as 'dark' | 'light') || 'dark';
   });
   const [cursorPos, setCursorPos] = useState<CursorPosition>({ line: 1, column: 1 });
+  const [iconTheme, setIconTheme] = useState<IconThemeId>(loadIconTheme);
+  const iconThemeContext = useMemo(() => ({ iconTheme, uiTheme: theme }), [iconTheme, theme]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(ICON_THEME_KEY, iconTheme);
+    } catch {
+      // Preference just won't persist
+    }
+  }, [iconTheme]);
+
+  const handleToggleIconTheme = () => {
+    setIconTheme((prev) => (prev === 'zeus' ? 'material' : 'zeus'));
+  };
+  const iconThemeLabel = ICON_THEMES.find((t) => t.id === iconTheme)?.label ?? iconTheme;
 
   // Sync dark class on document element
   useEffect(() => {
@@ -122,12 +148,21 @@ export const App: React.FC = () => {
         e.preventDefault();
         e.stopPropagation();
         openPaletteRef.current(e.shiftKey ? '>' : '');
+      } else if (key === '\\') {
+        e.preventDefault();
+        e.stopPropagation();
+        splitEditor();
+      } else if ((key === '1' || key === '2') && !e.shiftKey && !e.altKey) {
+        // Ctrl+1 / Ctrl+2 jump to the left / right editor
+        e.preventDefault();
+        e.stopPropagation();
+        focusGroup(Number(key) - 1);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [openFolder]);
+  }, [openFolder, splitEditor, focusGroup]);
 
   // Restore the last session (folder, expanded folders and open tabs) on startup
   const sessionRestored = useRef(false);
@@ -137,10 +172,19 @@ export const App: React.FC = () => {
         const raw = localStorage.getItem(SESSION_KEY);
         const session = raw ? (JSON.parse(raw) as SavedSession) : null;
         if (session?.rootPath && (await openFolderPath(session.rootPath, session.expandedFolders))) {
-          for (const path of session.openTabs ?? []) {
-            await openFile({ name: fileNameOf(path), path, isDirectory: false });
+          const savedGroups: EditorGroup[] = session.groups ?? [
+            { tabs: session.openTabs ?? [], active: session.activeTab ?? null },
+          ];
+          for (const [groupIndex, group] of savedGroups.entries()) {
+            for (const path of group.tabs) {
+              await openFile({ name: fileNameOf(path), path, isDirectory: false }, { group: groupIndex });
+            }
           }
-          if (session.activeTab) setActiveTabPath(session.activeTab);
+          // Files that no longer exist are skipped, so groups may have shifted
+          for (const [groupIndex, group] of savedGroups.entries()) {
+            if (group.active) selectTab(groupIndex, group.active);
+          }
+          focusGroup(session.activeGroup ?? 0);
         }
       } catch (error) {
         console.error('Failed to restore session:', error);
@@ -153,21 +197,21 @@ export const App: React.FC = () => {
   }, []);
 
   // Persist the session whenever it changes (after the restore finished)
-  const tabPaths = tabs.map((t) => t.path).join('\n');
+  const groupsKey = JSON.stringify(groups);
   useEffect(() => {
     if (!sessionRestored.current) return;
     const session: SavedSession = {
       rootPath,
       expandedFolders: [...expandedFolders].filter((p) => p !== rootPath),
-      openTabs: tabPaths ? tabPaths.split('\n') : [],
-      activeTab: activeTabPath,
+      groups: JSON.parse(groupsKey) as EditorGroup[],
+      activeGroup,
     };
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     } catch {
       // Storage full or unavailable: the session just won't be remembered
     }
-  }, [rootPath, expandedFolders, tabPaths, activeTabPath]);
+  }, [rootPath, expandedFolders, groupsKey, activeGroup]);
 
   // React to changes made outside the IDE (git, npm, other editors)
   const refreshTreeRef = useRef(refreshTree);
@@ -187,14 +231,23 @@ export const App: React.FC = () => {
     { id: 'file.save', label: 'Salvar arquivo', shortcut: 'Ctrl + S', run: saveActiveFile },
     { id: 'file.saveAll', label: 'Salvar todos os arquivos', run: () => { saveAll(); } },
     { id: 'tab.close', label: 'Fechar aba ativa', shortcut: 'Ctrl + W', run: () => { if (activeTabPath) closeTab(activeTabPath); } },
+    { id: 'editor.split', label: 'Dividir editor (abrir ao lado)', shortcut: 'Ctrl + \\', run: splitEditor },
+    { id: 'editor.closeGroup', label: 'Fechar painel dividido', run: () => { if (groups.length > 1) closeGroup(activeGroup); } },
+    { id: 'editor.focusLeft', label: 'Ir para o editor da esquerda', shortcut: 'Ctrl + 1', run: () => focusGroup(0) },
+    { id: 'editor.focusRight', label: 'Ir para o editor da direita', shortcut: 'Ctrl + 2', run: () => focusGroup(1) },
     { id: 'terminal.toggle', label: 'Alternar terminal', shortcut: 'Ctrl + `', run: handleToggleTerminal },
     { id: 'terminal.cmd', label: 'Terminal: usar Prompt de Comando (CMD)', run: () => { setShellType('cmd'); setIsTerminalOpen(true); } },
     { id: 'terminal.powershell', label: 'Terminal: usar PowerShell', run: () => { setShellType('powershell'); setIsTerminalOpen(true); } },
     { id: 'theme.toggle', label: `Mudar para tema ${theme === 'dark' ? 'claro' : 'escuro'}`, run: handleToggleTheme },
+    ...ICON_THEMES.map((t) => ({
+      id: `icons.${t.id}`,
+      label: `Tema de ícones: ${t.label}${t.id === iconTheme ? ' (atual)' : ''}`,
+      run: () => setIconTheme(t.id),
+    })),
     { id: 'explorer.refresh', label: 'Recarregar explorador de arquivos', run: () => refreshTree() },
     { id: 'help.channel', label: 'Abrir canal Código Roxo no YouTube', run: () => window.zeusAPI?.openExternal('https://www.youtube.com/@codigoroxo') },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [openFolder, saveActiveFile, saveAll, activeTabPath, closeTab, theme, refreshTree]);
+  ], [openFolder, saveActiveFile, saveAll, activeTabPath, closeTab, theme, refreshTree, splitEditor, closeGroup, focusGroup, groups.length, activeGroup, iconTheme]);
 
   // Hide preloader splash screen once React workspace is mounted
   useEffect(() => {
@@ -205,85 +258,91 @@ export const App: React.FC = () => {
   const projectName = rootPath ? rootPath.replace(/\\/g, '/').split('/').pop() : null;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-zeus-bg text-zeus-text overflow-hidden">
-      {/* Title Bar */}
-      <TitleBar
-        projectName={projectName}
-        theme={theme}
-        onToggleTheme={handleToggleTheme}
-        onOpenFolder={openFolder}
-        onToggleTerminal={handleToggleTerminal}
-        isTerminalOpen={isTerminalOpen}
-      />
-
-      {/* Workspace Area: Sidebar + Editor + Terminal */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar
-          rootPath={rootPath}
-          fileTree={fileTree}
-          expandedFolders={expandedFolders}
-          activeFilePath={activeTabPath}
-          isLoading={isLoading}
+    <IconThemeContext.Provider value={iconThemeContext}>
+      <div className="h-screen w-screen flex flex-col bg-zeus-bg text-zeus-text overflow-hidden">
+        {/* Title Bar */}
+        <TitleBar
+          projectName={projectName}
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
           onOpenFolder={openFolder}
-          onRefresh={() => refreshTree()}
-          onSelectFile={openFile}
-          onToggleFolder={toggleFolder}
-          onCreateFile={createFile}
-          onCreateFolder={createFolder}
-          onDeleteItem={handleDeleteItem}
-          onRenameItem={handleRenameItem}
+          onToggleTerminal={handleToggleTerminal}
+          isTerminalOpen={isTerminalOpen}
         />
 
-        {/* Central Work Area: Editor & Terminal */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-          <EditorArea
-            tabs={tabs}
-            activeTab={activeTab}
-            activeTabPath={activeTabPath}
-            theme={theme}
-            onSelectTab={setActiveTabPath}
-            onCloseTab={closeTab}
-            onChangeContent={(content) => {
-              if (activeTabPath) updateContent(activeTabPath, content);
-            }}
-            onCursorChange={setCursorPos}
+        {/* Workspace Area: Sidebar + Editor + Terminal */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Sidebar */}
+          <Sidebar
+            rootPath={rootPath}
+            fileTree={fileTree}
+            expandedFolders={expandedFolders}
+            activeFilePath={activeTabPath}
+            isLoading={isLoading}
             onOpenFolder={openFolder}
-            onToggleTerminal={handleToggleTerminal}
+            onRefresh={() => refreshTree()}
+            onSelectFile={(node, toSide) => openFile(node, { toSide })}
+            onToggleFolder={toggleFolder}
+            onCreateFile={createFile}
+            onCreateFolder={createFolder}
+            onDeleteItem={handleDeleteItem}
+            onRenameItem={handleRenameItem}
+            iconThemeLabel={iconThemeLabel}
+            onToggleIconTheme={handleToggleIconTheme}
           />
 
-          {/* Terminal Drawer (CMD / PowerShell) */}
-          <TerminalPanel
-            isOpen={isTerminalOpen}
-            onClose={() => setIsTerminalOpen(false)}
-            cwd={rootPath}
-            shellType={shellType}
-            theme={theme}
-            onShellChange={setShellType}
-          />
+          {/* Central Work Area: Editor & Terminal */}
+          <div className="flex-1 flex flex-col h-full overflow-hidden">
+            <EditorArea
+              files={files}
+              groups={groups}
+              activeGroup={activeGroup}
+              theme={theme}
+              onSelectTab={selectTab}
+              onCloseTab={closeTab}
+              onFocusGroup={focusGroup}
+              onMoveTab={moveTab}
+              onSplit={splitEditor}
+              onCloseGroup={closeGroup}
+              onChangeContent={updateContent}
+              onCursorChange={setCursorPos}
+              onOpenFolder={openFolder}
+              onToggleTerminal={handleToggleTerminal}
+            />
+
+            {/* Terminal Drawer (CMD / PowerShell) */}
+            <TerminalPanel
+              isOpen={isTerminalOpen}
+              onClose={() => setIsTerminalOpen(false)}
+              cwd={rootPath}
+              shellType={shellType}
+              theme={theme}
+              onShellChange={setShellType}
+            />
+          </div>
         </div>
+
+        {/* Status Bar */}
+        <StatusBar
+          activeTab={activeTab}
+          cursorPos={cursorPos}
+          isTerminalOpen={isTerminalOpen}
+          onToggleTerminal={handleToggleTerminal}
+          rootPath={rootPath}
+          shellType={shellType}
+        />
+
+        <CommandPalette
+          isOpen={paletteQuery !== null}
+          initialQuery={paletteQuery ?? ''}
+          rootPath={rootPath}
+          files={projectFiles}
+          commands={paletteCommands}
+          onOpenFile={(path, toSide) => openFile({ name: fileNameOf(path), path, isDirectory: false }, { toSide })}
+          onClose={() => setPaletteQuery(null)}
+        />
       </div>
-
-      {/* Status Bar */}
-      <StatusBar
-        activeTab={activeTab}
-        cursorPos={cursorPos}
-        isTerminalOpen={isTerminalOpen}
-        onToggleTerminal={handleToggleTerminal}
-        rootPath={rootPath}
-        shellType={shellType}
-      />
-
-      <CommandPalette
-        isOpen={paletteQuery !== null}
-        initialQuery={paletteQuery ?? ''}
-        rootPath={rootPath}
-        files={projectFiles}
-        commands={paletteCommands}
-        onOpenFile={(path) => openFile({ name: fileNameOf(path), path, isDirectory: false })}
-        onClose={() => setPaletteQuery(null)}
-      />
-    </div>
+    </IconThemeContext.Provider>
   );
 };
 

@@ -10,6 +10,7 @@ import {
   File,
   FileTerminal,
 } from 'lucide-react';
+import { useIconTheme, materialIconUrl } from '../../theme/iconTheme';
 
 interface FileIconProps {
   isDirectory: boolean;
@@ -24,6 +25,19 @@ export const FileIcon: React.FC<FileIconProps> = ({
   extension,
   name,
 }) => {
+  const { iconTheme, uiTheme } = useIconTheme();
+
+  if (iconTheme === 'material') {
+    return (
+      <img
+        src={materialIconUrl(name || extension || '', isDirectory, Boolean(isOpen), uiTheme)}
+        alt=""
+        draggable={false}
+        className="w-4 h-4 shrink-0"
+      />
+    );
+  }
+
   if (isDirectory) {
     return isOpen ? (
       <FolderOpen className="w-4 h-4 text-purple-400 shrink-0" />
@@ -32,7 +46,9 @@ export const FileIcon: React.FC<FileIconProps> = ({
     );
   }
 
-  const ext = extension?.replace('.', '').toLowerCase() || '';
+  // Tabs and the palette only pass the file name
+  const fromName = name && name.includes('.') ? name.slice(name.lastIndexOf('.')) : '';
+  const ext = (extension || fromName).replace('.', '').toLowerCase();
 
   // Specific file names
   if (name?.toLowerCase() === 'package.json') {
