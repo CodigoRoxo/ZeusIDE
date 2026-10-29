@@ -15,9 +15,9 @@
 
 </div>
 
-<!-- Adicione aqui um GIF ou screenshot da IDE em uso, por exemplo:
-<p align="center"><img src="docs/screenshot.png" alt="Zeus IDE em uso" width="900" /></p>
--->
+<p align="center">
+  <img src="docs/screenshot-editor.png" alt="Zeus IDE com editor e terminal integrado" width="900" />
+</p>
 
 ## Download
 
@@ -31,6 +31,17 @@ Na página de [Releases](https://github.com/CodigoRoxo/ZeusIDE/releases/latest) 
 > **Aviso do Windows SmartScreen:** o executável ainda não é assinado digitalmente, então o Windows pode mostrar "O Windows protegeu o computador". Clique em **Mais informações → Executar assim mesmo**. O código-fonte completo está neste repositório, e você pode compilar o seu próprio executável (veja abaixo).
 
 ## Recursos
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshot-quick-open.png" alt="Busca de arquivos com Ctrl+P" /><br /><sub><b>Ctrl+P</b>: busca de arquivos</sub></td>
+    <td align="center"><img src="docs/screenshot-commands.png" alt="Paleta de comandos com Ctrl+Shift+P" /><br /><sub><b>Ctrl+Shift+P</b>: paleta de comandos</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshot-light.png" alt="Tema claro" /><br /><sub>Tema claro</sub></td>
+    <td align="center"><img src="docs/screenshot-welcome.png" alt="Tela inicial" /><br /><sub>Tela inicial</sub></td>
+  </tr>
+</table>
 
 - **Explorador de arquivos**
   - Abre pastas pelo diálogo nativo do Windows, e a barra lateral tem largura ajustável.
