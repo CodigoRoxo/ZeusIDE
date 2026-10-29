@@ -111,6 +111,8 @@ npm run dist            # instalador  -> release/ZeusIDE-Setup-x.y.z.exe
 npm run dist:portable   # portátil    -> release/ZeusIDE-Portable-x.y.z.exe
 ```
 
+A pasta `release/` é apagada antes de cada build, então ela só guarda a versão que você acabou de gerar. Os instaladores oficiais são gerados pelo GitHub Actions a cada tag de versão e ficam em [Releases](https://github.com/CodigoRoxo/ZeusIDE/releases).
+
 ## Estrutura do projeto
 
 ```

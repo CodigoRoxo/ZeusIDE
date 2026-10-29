@@ -19,10 +19,11 @@
     "build": "tsc && vite build && node scripts/build-electron.mjs",
     "preview": "vite preview",
     "icons": "python scripts/generate-icons.py && node scripts/gen-brand-logo.mjs",
-    "pack": "npm run build && electron-builder --win --dir",
-    "dist": "npm run build && electron-builder --win nsis",
-    "dist:portable": "npm run build && electron-builder --win portable",
-    "release": "npm run build && electron-builder --win nsis portable --publish always"
+    "clean": "node -e \"require('fs').rmSync('release',{recursive:true,force:true})\"",
+    "pack": "npm run clean && npm run build && electron-builder --win --dir",
+    "dist": "npm run clean && npm run build && electron-builder --win nsis",
+    "dist:portable": "npm run clean && npm run build && electron-builder --win portable",
+    "release": "npm run clean && npm run build && electron-builder --win nsis portable --publish always"
   },
   "build": {
     "appId": "com.zeus.ide",
