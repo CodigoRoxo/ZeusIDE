@@ -1,6 +1,6 @@
 {
   "name": "zeus-ide",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "description": "Editor de código desktop open source com Monaco e terminal integrado",
   "license": "MIT",
