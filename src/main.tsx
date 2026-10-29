@@ -14,6 +14,22 @@ import './index.css';
 // Ensure 100% offline, local Monaco loading with zero CDN dependency
 loader.config({ monaco });
 
+// Monaco only sees the open file, not the whole project, so semantic checks would flag
+// every import as "cannot find module". Keep syntax errors and IntelliSense only.
+const { typescript } = monaco.languages;
+for (const defaults of [typescript.typescriptDefaults, typescript.javascriptDefaults]) {
+  defaults.setDiagnosticsOptions({ noSemanticValidation: true, noSyntaxValidation: false });
+  defaults.setCompilerOptions({
+    target: typescript.ScriptTarget.ESNext,
+    module: typescript.ModuleKind.ESNext,
+    moduleResolution: typescript.ModuleResolutionKind.NodeJs,
+    jsx: typescript.JsxEmit.ReactJSX,
+    allowJs: true,
+    allowNonTsExtensions: true,
+    esModuleInterop: true,
+  });
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
