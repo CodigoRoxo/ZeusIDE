@@ -18,6 +18,10 @@ interface CodeEditorProps {
   onFocus?: () => void;
   /** Focus the editor on mount and whenever its file changes */
   autoFocus?: boolean;
+  fontSize?: number;
+  showMinimap?: boolean;
+  /** Ctrl+mouse wheel over the code: +1 to grow the font, -1 to shrink it */
+  onZoomFont?: (delta: number) => void;
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
@@ -27,7 +31,11 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onCursorChange,
   onFocus,
   autoFocus = true,
+  fontSize = 14,
+  showMinimap = true,
+  onZoomFont,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const monacoRef = useRef<typeof import('monaco-editor') | null>(null);
   const editorRef = useRef<monacoEditor.IStandaloneCodeEditor | null>(null);
 
@@ -36,6 +44,23 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onCursorChangeRef.current = onCursorChange;
   const onFocusRef = useRef(onFocus);
   onFocusRef.current = onFocus;
+  const onZoomFontRef = useRef(onZoomFont);
+  onZoomFontRef.current = onZoomFont;
+
+  // Ctrl+wheel zooms the font. A native, non-passive capture listener is needed to
+  // stop Monaco from scrolling (React's wheel handlers are passive).
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const handleWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.deltaY === 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      onZoomFontRef.current?.(e.deltaY < 0 ? 1 : -1);
+    };
+    container.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+    return () => container.removeEventListener('wheel', handleWheel, { capture: true });
+  }, []);
 
   const activeThemeName = theme === 'dark' ? ZEUS_THEME_NAME : ZEUS_LIGHT_THEME_NAME;
 
@@ -80,7 +105,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   }, [activeThemeName]);
 
   return (
-    <div className="w-full h-full bg-zeus-bg relative">
+    <div ref={containerRef} className="w-full h-full bg-zeus-bg relative">
       <Editor
         height="100%"
         path={file.path}
@@ -93,11 +118,11 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         onMount={handleEditorMount}
         theme={activeThemeName}
         options={{
-          fontSize: 14,
+          fontSize,
           fontFamily: "'Fira Code', 'JetBrains Mono', 'Consolas', monospace",
           fontLigatures: true,
           minimap: {
-            enabled: true,
+            enabled: showMinimap,
             maxColumn: 80,
             renderCharacters: false,
           },

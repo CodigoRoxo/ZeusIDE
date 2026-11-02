@@ -66,6 +66,11 @@ Na página de [Releases](https://github.com/CodigoRoxo/ZeusIDE/releases/latest) 
   - Arraste abas entre os lados, ou para a metade direita do editor para dividir. Também dá para reordenar arrastando.
   - O mesmo arquivo aberto nos dois lados fica sincronizado. O divisor é redimensionável (duplo clique centraliza).
   - `Ctrl+1` / `Ctrl+2` alternam entre os lados, e a divisão é lembrada ao reabrir a IDE.
+- **Zoom e modo apresentação** (ótimo para gravar aulas)
+  - `Ctrl+=` / `Ctrl+-` / `Ctrl+0` aumentam, diminuem e restauram o zoom da interface inteira (editor, terminal, explorador).
+  - `Ctrl+roda do mouse` sobre o código muda só a fonte do editor.
+  - **Modo apresentação** (botão na barra de título ou paleta de comandos): zoom de 150% e minimapa escondido. Desligar volta como estava.
+  - Zoom, fonte e modo apresentação ficam salvos entre sessões, e o zoom atual aparece na barra de status.
 - **Temas de ícones**
   - **Zeus** (padrão) ou **[Material](https://github.com/material-extensions/vscode-material-icon-theme)**, o tema popular do VS Code, com ícones específicos para mais de mil tipos de arquivo e pasta.
   - Troque pelo botão de ícones no topo do explorador ou pela paleta de comandos.
@@ -85,6 +90,8 @@ Na página de [Releases](https://github.com/CodigoRoxo/ZeusIDE/releases/latest) 
 | `Ctrl + Shift + P` | Abre a paleta de comandos |
 | `Ctrl + \` | Divide o editor (abre o arquivo ao lado) |
 | `Ctrl + 1` / `Ctrl + 2` | Vai para o editor da esquerda / direita |
+| `Ctrl + =` / `Ctrl + -` / `Ctrl + 0` | Aumenta / diminui / restaura o zoom da interface |
+| `Ctrl + roda do mouse` | Aumenta ou diminui a fonte do editor |
 | `Ctrl + S` | Salva o arquivo ativo |
 | `Ctrl + W` | Fecha a aba ativa |
 | `Ctrl + \`` | Abre ou fecha o terminal |

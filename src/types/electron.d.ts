@@ -31,6 +31,11 @@ export interface ZeusAPI {
     kill: () => void;
   };
 
+  zoom: {
+    getFactor: () => number;
+    setFactor: (factor: number) => void;
+  };
+
   window: {
     minimize: () => void;
     maximize: () => void;

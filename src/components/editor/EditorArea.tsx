@@ -22,6 +22,9 @@ interface EditorAreaProps {
   onCursorChange: (pos: CursorPosition) => void;
   onOpenFolder: () => void;
   onToggleTerminal: () => void;
+  editorFontSize: number;
+  showMinimap: boolean;
+  onZoomFont: (delta: number) => void;
 }
 
 // Limits for the split divider, as a fraction of the editor width
@@ -43,6 +46,9 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   onCursorChange,
   onOpenFolder,
   onToggleTerminal,
+  editorFontSize,
+  showMinimap,
+  onZoomFont,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [splitRatio, setSplitRatio] = useState(0.5);
@@ -183,6 +189,12 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                   </kbd>
                 </div>
                 <div className="flex justify-between items-center text-zeus-text">
+                  <span>Zoom (aumentar / diminuir)</span>
+                  <kbd className="px-2 py-0.5 bg-zeus-surface border border-zeus-border rounded text-[11px] text-zeus-text font-mono">
+                    Ctrl + = / -
+                  </kbd>
+                </div>
+                <div className="flex justify-between items-center text-zeus-text">
                   <span>Salvar arquivo</span>
                   <kbd className="px-2 py-0.5 bg-zeus-surface border border-zeus-border rounded text-[11px] text-zeus-text font-mono">
                     Ctrl + S
@@ -298,6 +310,9 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                     onChangeContent={(content) => onChangeContent(activeFile.path, content)}
                     onCursorChange={onCursorChange}
                     onFocus={() => onFocusGroup(groupIndex)}
+                    fontSize={editorFontSize}
+                    showMinimap={showMinimap}
+                    onZoomFont={onZoomFont}
                   />
                 )}
 

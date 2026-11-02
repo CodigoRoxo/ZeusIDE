@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { contextBridge, ipcRenderer, IpcRendererEvent, webFrame } from 'electron';
 
 contextBridge.exposeInMainWorld('zeusAPI', {
   platform: process.platform,
@@ -48,6 +48,12 @@ contextBridge.exposeInMainWorld('zeusAPI', {
     restart: (cwd?: string, shellType?: string, cols?: number, rows?: number) =>
       ipcRenderer.invoke('terminal:restart', cwd, shellType, cols, rows),
     kill: () => ipcRenderer.send('terminal:kill'),
+  },
+
+  // Interface zoom (whole page: editor, terminal, sidebar...)
+  zoom: {
+    getFactor: () => webFrame.getZoomFactor(),
+    setFactor: (factor: number) => webFrame.setZoomFactor(factor),
   },
 
   // Window Controls

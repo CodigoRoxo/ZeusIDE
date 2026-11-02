@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal as TerminalIcon, Check, CircleAlert } from 'lucide-react';
+import { Terminal as TerminalIcon, Check, CircleAlert, Minus, Plus, Presentation } from 'lucide-react';
 import { OpenFile, CursorPosition } from '../../types/ide';
 
 interface StatusBarProps {
@@ -9,6 +9,13 @@ interface StatusBarProps {
   onToggleTerminal: () => void;
   rootPath: string | null;
   shellType?: 'cmd' | 'powershell';
+  uiZoom: number;
+  editorFontSize: number;
+  isPresentation: boolean;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onResetZoom: () => void;
+  onTogglePresentation: () => void;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
@@ -18,6 +25,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onToggleTerminal,
   rootPath,
   shellType = 'cmd',
+  uiZoom,
+  editorFontSize,
+  isPresentation,
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
+  onTogglePresentation,
 }) => {
   return (
     <footer className="h-6 bg-zeus-surface border-t border-zeus-border px-3 flex items-center justify-between text-[11px] font-sans select-none text-zeus-muted shrink-0">
@@ -77,6 +91,40 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         )}
 
         <span>UTF-8</span>
+
+        {/* Presentation mode badge (click to leave it) */}
+        {isPresentation && (
+          <button
+            onClick={onTogglePresentation}
+            className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-600 dark:text-purple-300 font-medium hover:bg-purple-500/25 transition-colors"
+            title="Sair do modo apresentação"
+          >
+            <Presentation className="w-3 h-3" />
+            <span>Apresentação</span>
+          </button>
+        )}
+
+        {/* Interface zoom */}
+        <div
+          className="flex items-center"
+          title={`Zoom da interface (Ctrl + = / Ctrl + - / Ctrl + 0) · Fonte do editor: ${editorFontSize}px (Ctrl + roda do mouse)`}
+        >
+          <button onClick={onZoomOut} className="p-0.5 rounded hover:bg-zeus-hover hover:text-zeus-text transition-colors" aria-label="Diminuir zoom">
+            <Minus className="w-3 h-3" />
+          </button>
+          <button
+            onClick={onResetZoom}
+            className={`px-1 rounded hover:bg-zeus-hover hover:text-zeus-text transition-colors tabular-nums ${
+              Math.abs(uiZoom - 1) > 0.001 ? 'text-purple-600 dark:text-purple-300 font-semibold' : ''
+            }`}
+            aria-label="Restaurar zoom"
+          >
+            {Math.round(uiZoom * 100)}%
+          </button>
+          <button onClick={onZoomIn} className="p-0.5 rounded hover:bg-zeus-hover hover:text-zeus-text transition-colors" aria-label="Aumentar zoom">
+            <Plus className="w-3 h-3" />
+          </button>
+        </div>
 
         {/* Creator / Channel Link */}
         <button

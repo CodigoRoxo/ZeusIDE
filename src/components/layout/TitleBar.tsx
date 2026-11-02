@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Minus, Square, Copy, X, FolderOpen, Terminal as TerminalIcon, Sun, Moon } from 'lucide-react';
+import { Minus, Square, Copy, X, FolderOpen, Terminal as TerminalIcon, Sun, Moon, Presentation } from 'lucide-react';
 import { BRAND_LOGO_BASE64 } from '../../assets/brandLogo';
 
 interface TitleBarProps {
@@ -9,6 +9,8 @@ interface TitleBarProps {
   onOpenFolder: () => void;
   onToggleTerminal: () => void;
   isTerminalOpen: boolean;
+  isPresentation?: boolean;
+  onTogglePresentation?: () => void;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({
@@ -18,6 +20,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   onOpenFolder,
   onToggleTerminal,
   isTerminalOpen,
+  isPresentation = false,
+  onTogglePresentation,
 }) => {
   const [isMaximized, setIsMaximized] = useState(false);
 
@@ -116,6 +120,20 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
           <span>Código Roxo</span>
         </button>
+
+        {onTogglePresentation && (
+          <button
+            onClick={onTogglePresentation}
+            className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${
+              isPresentation
+                ? 'text-purple-600 dark:text-purple-300 bg-purple-500/15'
+                : 'text-zeus-muted hover:text-zeus-text hover:bg-zeus-hover'
+            }`}
+            title={isPresentation ? 'Sair do modo apresentação' : 'Modo apresentação (zoom grande para gravar aulas)'}
+          >
+            <Presentation className="w-3.5 h-3.5" />
+          </button>
+        )}
 
         {onToggleTheme && (
           <button

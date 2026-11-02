@@ -7,6 +7,7 @@ import { StatusBar } from './components/statusbar/StatusBar';
 import { CommandPalette, PaletteCommand } from './components/palette/CommandPalette';
 import { useFileSystem } from './hooks/useFileSystem';
 import { useTabs } from './hooks/useTabs';
+import { useZoom } from './hooks/useZoom';
 import { CursorPosition, EditorGroup } from './types/ide';
 import { IconThemeContext, IconThemeId, ICON_THEMES, ICON_THEME_KEY, loadIconTheme } from './theme/iconTheme';
 
@@ -61,6 +62,18 @@ export const App: React.FC = () => {
     saveActiveFile,
     saveAll,
   } = useTabs();
+
+  const {
+    uiZoom,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    editorFontSize,
+    changeEditorFontSize,
+    resetEditorFontSize,
+    isPresentation,
+    togglePresentation,
+  } = useZoom();
 
   const handleRenameItem = async (oldPath: string, newName: string) => {
     const newPath = await renameItem(oldPath, newName);
@@ -157,12 +170,25 @@ export const App: React.FC = () => {
         e.preventDefault();
         e.stopPropagation();
         focusGroup(Number(key) - 1);
+      } else if ((key === '=' || key === '+') && !e.altKey) {
+        // Ctrl+= / Ctrl++ (also numpad +) zoom the whole interface
+        e.preventDefault();
+        e.stopPropagation();
+        zoomIn();
+      } else if ((key === '-' || key === '_') && !e.altKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        zoomOut();
+      } else if (key === '0' && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        resetZoom();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [openFolder, splitEditor, focusGroup]);
+  }, [openFolder, splitEditor, focusGroup, zoomIn, zoomOut, resetZoom]);
 
   // Restore the last session (folder, expanded folders and open tabs) on startup
   const sessionRestored = useRef(false);
@@ -238,6 +264,13 @@ export const App: React.FC = () => {
     { id: 'terminal.toggle', label: 'Alternar terminal', shortcut: 'Ctrl + `', run: handleToggleTerminal },
     { id: 'terminal.cmd', label: 'Terminal: usar Prompt de Comando (CMD)', run: () => { setShellType('cmd'); setIsTerminalOpen(true); } },
     { id: 'terminal.powershell', label: 'Terminal: usar PowerShell', run: () => { setShellType('powershell'); setIsTerminalOpen(true); } },
+    { id: 'zoom.in', label: 'Aumentar zoom da interface', shortcut: 'Ctrl + =', run: zoomIn },
+    { id: 'zoom.out', label: 'Diminuir zoom da interface', shortcut: 'Ctrl + -', run: zoomOut },
+    { id: 'zoom.reset', label: 'Restaurar zoom da interface (100%)', shortcut: 'Ctrl + 0', run: resetZoom },
+    { id: 'font.bigger', label: 'Aumentar fonte do editor', shortcut: 'Ctrl + roda', run: () => changeEditorFontSize(1) },
+    { id: 'font.smaller', label: 'Diminuir fonte do editor', shortcut: 'Ctrl + roda', run: () => changeEditorFontSize(-1) },
+    { id: 'font.reset', label: 'Restaurar fonte do editor', run: resetEditorFontSize },
+    { id: 'presentation.toggle', label: isPresentation ? 'Sair do modo apresentação' : 'Modo apresentação (gravar aulas)', run: togglePresentation },
     { id: 'theme.toggle', label: `Mudar para tema ${theme === 'dark' ? 'claro' : 'escuro'}`, run: handleToggleTheme },
     ...ICON_THEMES.map((t) => ({
       id: `icons.${t.id}`,
@@ -247,7 +280,7 @@ export const App: React.FC = () => {
     { id: 'explorer.refresh', label: 'Recarregar explorador de arquivos', run: () => refreshTree() },
     { id: 'help.channel', label: 'Abrir canal Código Roxo no YouTube', run: () => window.zeusAPI?.openExternal('https://www.youtube.com/@codigoroxo') },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [openFolder, saveActiveFile, saveAll, activeTabPath, closeTab, theme, refreshTree, splitEditor, closeGroup, focusGroup, groups.length, activeGroup, iconTheme]);
+  ], [openFolder, saveActiveFile, saveAll, activeTabPath, closeTab, theme, refreshTree, splitEditor, closeGroup, focusGroup, groups.length, activeGroup, iconTheme, zoomIn, zoomOut, resetZoom, changeEditorFontSize, resetEditorFontSize, isPresentation, togglePresentation]);
 
   // Hide preloader splash screen once React workspace is mounted
   useEffect(() => {
@@ -268,6 +301,8 @@ export const App: React.FC = () => {
           onOpenFolder={openFolder}
           onToggleTerminal={handleToggleTerminal}
           isTerminalOpen={isTerminalOpen}
+          isPresentation={isPresentation}
+          onTogglePresentation={togglePresentation}
         />
 
         {/* Workspace Area: Sidebar + Editor + Terminal */}
@@ -308,6 +343,9 @@ export const App: React.FC = () => {
               onCursorChange={setCursorPos}
               onOpenFolder={openFolder}
               onToggleTerminal={handleToggleTerminal}
+              editorFontSize={editorFontSize}
+              showMinimap={!isPresentation}
+              onZoomFont={changeEditorFontSize}
             />
 
             {/* Terminal Drawer (CMD / PowerShell) */}
@@ -330,6 +368,13 @@ export const App: React.FC = () => {
           onToggleTerminal={handleToggleTerminal}
           rootPath={rootPath}
           shellType={shellType}
+          uiZoom={uiZoom}
+          editorFontSize={editorFontSize}
+          isPresentation={isPresentation}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onResetZoom={resetZoom}
+          onTogglePresentation={togglePresentation}
         />
 
         <CommandPalette
